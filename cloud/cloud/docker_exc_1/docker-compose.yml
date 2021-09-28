@@ -1,0 +1,54 @@
+version: "3.9"
+services: 
+  mysql-db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: haslo
+    volumes: 
+      - mysql-data: /var/lib/mysql
+    ports: 8080:8080
+  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    environment:
+      - node.name=es
+      - cluster.name=es-docker-cluster
+      - cluster.initial_master_nodes=es
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.14.1
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - 5601:5601
+    depends_on:
+     - elasticsearch
+
+  backend:
+    container_name: backend
+    image: ./Dockerfile.backend
+    depends_on:
+        - mysql-db
+        - elasticsearch
+    ports: 5000:5000
+
+volumes:
+  mysl-data:
+  elasticsearch-data:
+    driver: local
+
+
